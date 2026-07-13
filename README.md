@@ -80,6 +80,17 @@ vehicle-damage-assessment/
 
 This logic is intentionally isolated from the ML layer so it can be tested and explained independently.
 
+### Stage 4: Optional Gemini reasoning layer
+
+`src/llm_reasoner.py` adds an optional Gemini-based explanation layer on top of the structured detector and severity outputs. It does not replace YOLO or the deterministic routing logic. Instead, it turns model evidence into:
+
+- a concise claim summary
+- explanation trace bullets
+- review flags
+- recommended next actions
+
+If `ENABLE_GEMINI_REASONER=true` and a valid `GEMINI_API_KEY` is present, the backend will call the Gemini Interactions API. If not, it falls back to deterministic reasoning so the API remains usable offline.
+
 ## Running locally
 
 ### API
@@ -116,7 +127,23 @@ This starts:
 
 ## API response shape
 
-`POST /predict` accepts a multipart image upload and returns JSON in this shape:
+`POST /predict` accepts a multipart image upload and returns a plain-text assessment report.
+
+Example text response:
+
+```text
+Vehicle Damage Assessment Report
+
+Routing Decision: Straight-Through Eligible
+Overall Severity: Minor
+Estimated Cost Range: $200-$500
+Processing Mode: mock
+
+Summary
+Straight-Through Eligible: 1 region detected with overall severity Minor.
+```
+
+`POST /predict/structured` remains available for the Streamlit app and any client that still needs machine-readable output. Its response shape is:
 
 ```json
 {
@@ -135,10 +162,40 @@ This starts:
   "estimate_note": "Illustrative rule-based estimate only, not a real actuarial or repair-platform quote.",
   "routing_decision": "Straight-Through Eligible",
   "reasoning": "One or two minor regions detected with no severe indicators.",
+  "summary": "Straight-Through Eligible: 1 region detected with overall severity Minor.",
+  "explanation_trace": [
+    "Detected 1 damage region.",
+    "Overall severity assessed as Minor.",
+    "Routing decision is Straight-Through Eligible."
+  ],
+  "review_flags": [],
+  "recommended_next_actions": [],
+  "reasoning_provider": "gemini",
+  "reasoning_mode": "disabled",
   "processing_mode": "mock",
   "annotated_image_base64": "..."
 }
 ```
+
+## Gemini integration
+
+The backend supports Gemini as an optional reasoning layer. By default, the code uses environment-driven configuration:
+
+```bash
+export ENABLE_GEMINI_REASONER=true
+export GEMINI_API_KEY=your_key_here
+export GEMINI_MODEL=gemini-2.5-flash
+export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/interactions
+```
+
+Recommended architecture:
+
+- `YOLOv8` handles localization
+- `ResNet18` handles severity
+- `src/decision_engine.py` keeps the hard routing rules
+- `src/llm_reasoner.py` produces clearer claims reasoning and follow-up actions
+
+This keeps the LLM in an explainability and triage-assistance role instead of letting it override core safety and routing rules.
 
 ## Training scaffolds
 

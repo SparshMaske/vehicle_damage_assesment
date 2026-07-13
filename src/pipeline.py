@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 
 from src.decision_engine import DamageAssessmentInput, cost_for_damage, overall_severity, route_claim
 from src.detection import DamageDetector
+from src.llm_reasoner import GeminiReasoner
 from src.severity import SeverityClassifier
 
 
@@ -18,6 +19,7 @@ class DamageAssessmentPipeline:
     ) -> None:
         self.detector = DamageDetector(detector_weights)
         self.classifier = SeverityClassifier(severity_weights)
+        self.reasoner = GeminiReasoner()
 
     def run(self, image: Image.Image) -> dict[str, Any]:
         detections, detection_mode = self.detector.predict(image)
@@ -59,6 +61,14 @@ class DamageAssessmentPipeline:
             overall = overall_severity(assessment_inputs)
 
         processing_mode = "model" if modes == {"model"} else "mock"
+        reasoning_payload = {
+            "damage_detections": enriched_detections,
+            "overall_severity": overall,
+            "routing_decision": routing_decision,
+            "estimated_cost_range": estimated_cost,
+            "processing_mode": processing_mode,
+        }
+        llm_reasoning = self.reasoner.explain(reasoning_payload)
 
         return {
             "damage_detections": enriched_detections,
@@ -67,6 +77,12 @@ class DamageAssessmentPipeline:
             "estimated_cost_range": estimated_cost,
             "estimate_note": "Illustrative rule-based estimate only, not a real actuarial or repair-platform quote.",
             "reasoning": reasoning,
+            "summary": llm_reasoning.summary,
+            "explanation_trace": llm_reasoning.explanation_trace,
+            "review_flags": llm_reasoning.review_flags,
+            "recommended_next_actions": llm_reasoning.recommended_next_actions,
+            "reasoning_provider": llm_reasoning.provider,
+            "reasoning_mode": llm_reasoning.mode,
             "processing_mode": processing_mode,
             "annotated_image_base64": encoded,
         }

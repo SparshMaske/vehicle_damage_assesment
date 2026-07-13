@@ -1,5 +1,4 @@
 import base64
-import json
 from io import BytesIO
 
 import requests
@@ -7,7 +6,7 @@ import streamlit as st
 from PIL import Image
 
 
-API_URL = st.secrets.get("api_url", "http://127.0.0.1:8000/predict") if hasattr(st, "secrets") else "http://127.0.0.1:8000/predict"
+API_URL = st.secrets.get("api_url", "http://127.0.0.1:8000/predict/structured") if hasattr(st, "secrets") else "http://127.0.0.1:8000/predict/structured"
 
 
 def decode_image(encoded: str) -> Image.Image:
@@ -65,8 +64,12 @@ with right:
                 metric_b.metric("Overall Severity", payload["overall_severity"])
                 metric_c.metric("Mode", payload["processing_mode"])
 
+                st.text_area("Summary", value=payload["summary"], height=120)
                 st.text_area("Reasoning", value=payload["reasoning"], height=100)
+                if payload["recommended_next_actions"]:
+                    st.write("Recommended Next Actions")
+                    for action in payload["recommended_next_actions"]:
+                        st.write(f"- {action}")
                 st.caption(payload["estimate_note"])
-                st.code(json.dumps(payload, indent=2), language="json")
     else:
-        st.info("Upload a vehicle image and run the assessment to see the annotated output and JSON response.")
+        st.info("Upload a vehicle image and run the assessment to see the annotated output and text-first assessment.")
