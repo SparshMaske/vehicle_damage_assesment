@@ -1,4 +1,8 @@
 .venv/
-venv/
 __pycache__/
-.DS_Store
+*.pyc
+.pytest_cache/
+.mypy_cache/
+models/weights/*.pt
+models/weights/*.pth
+*.log

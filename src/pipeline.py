@@ -1,5 +1,4 @@
 import base64
-from dataclasses import asdict
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -33,6 +32,7 @@ class DamageAssessmentPipeline:
 
             assessment = DamageAssessmentInput(
                 damage_type=detection.damage_type,
+                location=infer_location(detection.bbox, image.size),
                 severity=severity_result.label,
                 confidence=detection.confidence,
                 bbox=detection.bbox,
@@ -41,6 +41,7 @@ class DamageAssessmentPipeline:
             enriched_detections.append(
                 {
                     "type": detection.damage_type,
+                    "location": assessment.location,
                     "bbox": detection.bbox,
                     "severity": severity_result.label,
                     "confidence": round(detection.confidence, 3),
@@ -64,6 +65,7 @@ class DamageAssessmentPipeline:
             "overall_severity": overall,
             "routing_decision": routing_decision,
             "estimated_cost_range": estimated_cost,
+            "estimate_note": "Illustrative rule-based estimate only, not a real actuarial or repair-platform quote.",
             "reasoning": reasoning,
             "processing_mode": processing_mode,
             "annotated_image_base64": encoded,
@@ -86,6 +88,24 @@ def image_to_base64(image: Image.Image) -> str:
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def infer_location(bbox: list[int], image_size: tuple[int, int]) -> str:
+    width, height = image_size
+    x1, y1, x2, y2 = bbox
+    center_x = (x1 + x2) / 2
+    center_y = (y1 + y2) / 2
+
+    horizontal = "left" if center_x < width / 3 else "right" if center_x > (2 * width) / 3 else "center"
+    vertical = "front" if center_y < height / 3 else "rear" if center_y > (2 * height) / 3 else "mid"
+
+    if vertical == "mid" and horizontal == "center":
+        return "center_body"
+    if vertical == "mid":
+        return f"{horizontal}_side"
+    if horizontal == "center":
+        return f"{vertical}_center"
+    return f"{vertical}_{horizontal}"
 
 
 def default_pipeline() -> DamageAssessmentPipeline:

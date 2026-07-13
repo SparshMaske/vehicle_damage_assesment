@@ -26,6 +26,7 @@ COST_LOOKUP = {
 @dataclass
 class DamageAssessmentInput:
     damage_type: str
+    location: str
     severity: str
     confidence: float
     bbox: list[int]

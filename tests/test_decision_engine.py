@@ -10,8 +10,8 @@ def test_no_damage_routes_straight_through() -> None:
 
 def test_minor_low_count_routes_straight_through() -> None:
     items = [
-        DamageAssessmentInput("scratch", "Minor", 0.8, [0, 0, 10, 10]),
-        DamageAssessmentInput("dent", "Minor", 0.7, [10, 10, 20, 20]),
+        DamageAssessmentInput("scratch", "front_bumper", "Minor", 0.8, [0, 0, 10, 10]),
+        DamageAssessmentInput("dent", "left_side", "Minor", 0.7, [10, 10, 20, 20]),
     ]
     decision, reasoning, _ = route_claim(items)
     assert decision == "Straight-Through Eligible"
@@ -19,7 +19,7 @@ def test_minor_low_count_routes_straight_through() -> None:
 
 
 def test_severe_routes_to_adjuster() -> None:
-    items = [DamageAssessmentInput("dent", "Severe", 0.9, [0, 0, 10, 10])]
+    items = [DamageAssessmentInput("dent", "front_left", "Severe", 0.9, [0, 0, 10, 10])]
     decision, reasoning, _ = route_claim(items)
     assert decision == "Needs Adjuster Review"
     assert "severe" in reasoning.lower()
@@ -27,9 +27,9 @@ def test_severe_routes_to_adjuster() -> None:
 
 def test_three_regions_route_to_adjuster() -> None:
     items = [
-        DamageAssessmentInput("scratch", "Minor", 0.8, [0, 0, 10, 10]),
-        DamageAssessmentInput("dent", "Minor", 0.7, [10, 10, 20, 20]),
-        DamageAssessmentInput("broken_lamp", "Minor", 0.75, [20, 20, 30, 30]),
+        DamageAssessmentInput("scratch", "front_center", "Minor", 0.8, [0, 0, 10, 10]),
+        DamageAssessmentInput("dent", "left_side", "Minor", 0.7, [10, 10, 20, 20]),
+        DamageAssessmentInput("broken_lamp", "rear_right", "Minor", 0.75, [20, 20, 30, 30]),
     ]
     decision, reasoning, _ = route_claim(items)
     assert decision == "Needs Adjuster Review"
@@ -38,15 +38,15 @@ def test_three_regions_route_to_adjuster() -> None:
 
 def test_overall_severity_uses_highest_rank() -> None:
     items = [
-        DamageAssessmentInput("scratch", "Minor", 0.8, [0, 0, 10, 10]),
-        DamageAssessmentInput("dent", "Moderate", 0.7, [10, 10, 20, 20]),
+        DamageAssessmentInput("scratch", "front_center", "Minor", 0.8, [0, 0, 10, 10]),
+        DamageAssessmentInput("dent", "left_side", "Moderate", 0.7, [10, 10, 20, 20]),
     ]
     assert overall_severity(items) == "Moderate"
 
 
 def test_cost_ranges_collapse_when_identical() -> None:
     items = [
-        DamageAssessmentInput("scratch", "Minor", 0.8, [0, 0, 10, 10]),
-        DamageAssessmentInput("scratch", "Minor", 0.7, [10, 10, 20, 20]),
+        DamageAssessmentInput("scratch", "front_center", "Minor", 0.8, [0, 0, 10, 10]),
+        DamageAssessmentInput("scratch", "rear_center", "Minor", 0.7, [10, 10, 20, 20]),
     ]
     assert combine_cost_ranges(items) == "$200-$500"

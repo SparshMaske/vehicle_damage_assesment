@@ -9,6 +9,7 @@ from src.pipeline import default_pipeline
 
 class DamageDetectionResponse(BaseModel):
     type: str
+    location: str
     bbox: list[int]
     severity: str
     confidence: float
@@ -20,6 +21,7 @@ class PredictionResponse(BaseModel):
     overall_severity: str
     routing_decision: str
     estimated_cost_range: str
+    estimate_note: str
     reasoning: str
     processing_mode: str
     annotated_image_base64: str

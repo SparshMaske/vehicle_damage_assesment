@@ -7,3 +7,12 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+  streamlit:
+    build: .
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    depends_on:
+      - api
