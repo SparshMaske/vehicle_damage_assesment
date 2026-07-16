@@ -85,29 +85,29 @@ class GeminiReasoner:
         flags: list[str] = []
         actions: list[str] = []
         trace = [
-            f"Detected {len(detections)} damage region(s).",
-            f"Overall severity assessed as {overall}.",
-            f"Routing decision is {routing}.",
+            f"Detected {len(detections)} damage region(s) across the submitted evidence set.",
+            f"Aggregate severity is assessed as {overall}.",
+            f"System routing decision is {routing}.",
         ]
 
         if any(item["confidence"] < 0.65 for item in detections):
-            flags.append("low_detection_confidence")
-            actions.append("Request one additional angle to validate the low-confidence region.")
+            flags.append("LOW_DETECTION_CONFIDENCE")
+            actions.append("Request an additional supporting angle to validate the low-confidence damage region.")
 
         if any(item["severity"] == "Severe" for item in detections):
-            flags.append("severe_damage_present")
-            actions.append("Send claim to adjuster review and prioritize structural verification.")
+            flags.append("CRITICAL_DAMAGE_DETECTED")
+            actions.append("Escalate for field adjuster inspection and structural verification.")
 
         if any(item["type"] in {"crack/shatter", "broken_lamp"} for item in detections):
-            flags.append("safety_related_component")
-            actions.append("Request a close-up photo of the affected glass or lamp assembly.")
+            flags.append("SAFETY_COMPONENT_COMPROMISED")
+            actions.append("Request a close-up image of the affected glass or lamp assembly for safety review.")
 
         if not detections:
-            actions.append("Request a clearer image if the customer reports visible damage.")
+            actions.append("Request a clearer photo set if the claimant reports visible damage not captured in the submission.")
 
         summary = (
-            f"{routing}: {len(detections)} region(s) detected with overall severity {overall}. "
-            f"Rule-based backend reasoning is active because Gemini reasoning is {mode}."
+            f"{routing}: {len(detections)} region(s) were identified with aggregate severity {overall}. "
+            f"Professional fallback reasoning is active because Gemini reasoning is {mode}."
         )
         return ReasoningOutput(
             summary=summary,
@@ -127,8 +127,10 @@ def build_reasoning_prompt(payload: dict[str, Any]) -> str:
         "recommended_next_actions": ["string"],
     }
     return (
-        "You are assisting an auto-insurance claims triage backend.\n"
+        "You are a senior auto-insurance claims adjuster assisting a claims triage backend.\n"
         "Use only the structured evidence below.\n"
+        "Focus on aggregate severity, damage localization, system routing decision, and field follow-up actions.\n"
+        "Keep terminology professional and objective.\n"
         "Return strict JSON only.\n"
         f"Required schema: {json.dumps(schema)}\n"
         f"Evidence: {json.dumps(payload)}"

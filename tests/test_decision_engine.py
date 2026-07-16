@@ -4,7 +4,7 @@ from src.decision_engine import DamageAssessmentInput, combine_cost_ranges, over
 def test_no_damage_routes_straight_through() -> None:
     decision, reasoning, cost = route_claim([])
     assert decision == "Straight-Through Eligible"
-    assert reasoning == "No visible damage detected."
+    assert "No visible damage indicators" in reasoning
     assert cost == "$0-$0"
 
 
@@ -22,7 +22,7 @@ def test_severe_routes_to_adjuster() -> None:
     items = [DamageAssessmentInput("dent", "front_left", "Severe", 0.9, [0, 0, 10, 10])]
     decision, reasoning, _ = route_claim(items)
     assert decision == "Needs Adjuster Review"
-    assert "severe" in reasoning.lower()
+    assert "structural integrity audit" in reasoning.lower()
 
 
 def test_three_regions_route_to_adjuster() -> None:
@@ -33,7 +33,7 @@ def test_three_regions_route_to_adjuster() -> None:
     ]
     decision, reasoning, _ = route_claim(items)
     assert decision == "Needs Adjuster Review"
-    assert "three or more" in reasoning.lower()
+    assert "multi-region" in reasoning.lower()
 
 
 def test_overall_severity_uses_highest_rank() -> None:
@@ -49,4 +49,4 @@ def test_cost_ranges_collapse_when_identical() -> None:
         DamageAssessmentInput("scratch", "front_center", "Minor", 0.8, [0, 0, 10, 10]),
         DamageAssessmentInput("scratch", "rear_center", "Minor", 0.7, [10, 10, 20, 20]),
     ]
-    assert combine_cost_ranges(items) == "$200-$500"
+    assert combine_cost_ranges(items) == "$450-$8,200"

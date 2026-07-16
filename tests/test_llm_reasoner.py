@@ -23,7 +23,7 @@ def test_reasoner_falls_back_without_api_key() -> None:
     )
     assert output.provider == "gemini"
     assert output.mode in {"disabled", "fallback"}
-    assert "severe_damage_present" in output.review_flags
+    assert "CRITICAL_DAMAGE_DETECTED" in output.review_flags
 
 
 def test_parse_reasoning_json_accepts_fenced_blocks() -> None:
