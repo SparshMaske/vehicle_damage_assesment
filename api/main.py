@@ -34,6 +34,8 @@ class PredictionResponse(BaseModel):
     annotated_image_base64: str
 
 
+MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
+
 app = FastAPI(title="Vehicle Damage Assessment API", version="1.0.0")
 pipeline = default_pipeline()
 
@@ -48,12 +50,23 @@ async def run_prediction(file: UploadFile) -> dict:
         raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
 
     content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Uploaded file exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+        )
+
     try:
         image = Image.open(BytesIO(content)).convert("RGB")
-    except UnidentifiedImageError as exc:
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
         raise HTTPException(status_code=400, detail="Unable to decode image.") from exc
 
-    return pipeline.run(image)
+    try:
+        return pipeline.run(image)
+    except Exception as exc:  # noqa: BLE001 - surface a clean 500 instead of a stack trace
+        raise HTTPException(status_code=500, detail="Damage assessment pipeline failed.") from exc
 
 
 @app.post("/predict", response_class=Response)

@@ -28,6 +28,9 @@ class DamageAssessmentPipeline:
         modes = {detection_mode}
 
         for detection in detections:
+            detection.bbox = clamp_bbox(detection.bbox, image.size)
+            if not is_valid_bbox(detection.bbox):
+                continue
             crop = image.crop(tuple(detection.bbox))
             severity_result, severity_mode = self.classifier.predict(crop)
             modes.add(severity_mode)
@@ -88,6 +91,23 @@ class DamageAssessmentPipeline:
         }
 
 
+def clamp_bbox(bbox: list[int], image_size: tuple[int, int]) -> list[int]:
+    width, height = image_size
+    x1, y1, x2, y2 = (int(round(value)) for value in bbox)
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    x1 = min(max(x1, 0), width)
+    x2 = min(max(x2, 0), width)
+    y1 = min(max(y1, 0), height)
+    y2 = min(max(y2, 0), height)
+    return [x1, y1, x2, y2]
+
+
+def is_valid_bbox(bbox: list[int]) -> bool:
+    x1, y1, x2, y2 = bbox
+    return x2 > x1 and y2 > y1
+
+
 def annotate_image(image: Image.Image, detections: list[dict[str, Any]]) -> Image.Image:
     annotated = image.copy().convert("RGB")
     draw = ImageDraw.Draw(annotated)
@@ -95,8 +115,17 @@ def annotate_image(image: Image.Image, detections: list[dict[str, Any]]) -> Imag
         bbox = item["bbox"]
         label = f'{item["type"]} | {item["severity"]} | {item["confidence"]:.2f}'
         draw.rectangle(bbox, outline="red", width=3)
-        text_origin = (bbox[0], max(0, bbox[1] - 18))
-        draw.text(text_origin, label, fill="red")
+
+        # Draw a filled label chip so white text stays legible over any background.
+        text_bbox = draw.textbbox((0, 0), label)
+        text_w = text_bbox[2] - text_bbox[0]
+        text_h = text_bbox[3] - text_bbox[1]
+        chip_top = max(0, bbox[1] - text_h - 4)
+        draw.rectangle(
+            [bbox[0], chip_top, bbox[0] + text_w + 6, chip_top + text_h + 4],
+            fill="red",
+        )
+        draw.text((bbox[0] + 3, chip_top + 2), label, fill="white")
     return annotated
 
 

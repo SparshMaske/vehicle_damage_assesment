@@ -89,7 +89,7 @@ This logic is intentionally isolated from the ML layer so it can be tested and e
 - review flags
 - recommended next actions
 
-If `ENABLE_GEMINI_REASONER=true` and a valid `GEMINI_API_KEY` is present, the backend will call the Gemini Interactions API. If not, it falls back to deterministic reasoning so the API remains usable offline.
+If `ENABLE_GEMINI_REASONER=true` and a valid `GEMINI_API_KEY` is present, the backend calls the Gemini `generateContent` API (Google Generative Language API). If not, it falls back to deterministic reasoning so the API remains usable offline.
 
 ## Running locally
 
@@ -185,7 +185,7 @@ The backend supports Gemini as an optional reasoning layer. By default, the code
 export ENABLE_GEMINI_REASONER=true
 export GEMINI_API_KEY=your_key_here
 export GEMINI_MODEL=gemini-2.5-flash
-export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/interactions
+export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/models
 ```
 
 Recommended architecture:

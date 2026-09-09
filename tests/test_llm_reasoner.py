@@ -35,17 +35,17 @@ def test_parse_reasoning_json_accepts_fenced_blocks() -> None:
     assert parsed["review_flags"] == ["b"]
 
 
-def test_extract_output_text_reads_interactions_response() -> None:
+def test_extract_output_text_reads_generate_content_response() -> None:
     response = {
-        "steps": [
+        "candidates": [
             {
-                "type": "model_output",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "{\"summary\":\"ok\",\"explanation_trace\":[],\"review_flags\":[],\"recommended_next_actions\":[]}",
-                    }
-                ],
+                "content": {
+                    "parts": [
+                        {
+                            "text": "{\"summary\":\"ok\",\"explanation_trace\":[],\"review_flags\":[],\"recommended_next_actions\":[]}",
+                        }
+                    ]
+                }
             }
         ]
     }

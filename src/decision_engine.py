@@ -109,7 +109,7 @@ def route_claim(items: list[DamageAssessmentInput]) -> tuple[str, str, str]:
     if overall == "Minor" and count <= 2:
         return (
             "Straight-Through Eligible",
-            "Low-complexity cosmetic damage profile supports straight-through triage.",
+            "Low-complexity, minor cosmetic damage profile supports straight-through triage.",
             estimated_cost,
         )
 

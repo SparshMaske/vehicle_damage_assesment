@@ -6,7 +6,10 @@ from typing import Any
 import requests
 
 
-DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
+# Google Generative Language API. The reasoner posts to
+# ``{base_url}/{model}:generateContent`` and reads the standard
+# ``candidates[].content.parts[].text`` response shape.
+DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 
 
@@ -36,7 +39,7 @@ class GeminiReasoner:
         )
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model = model or os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
-        self.base_url = base_url or os.getenv("GEMINI_BASE_URL", DEFAULT_GEMINI_BASE_URL)
+        self.base_url = (base_url or os.getenv("GEMINI_BASE_URL", DEFAULT_GEMINI_BASE_URL)).rstrip("/")
         self.timeout_seconds = timeout_seconds
 
     def explain(self, payload: dict[str, Any]) -> ReasoningOutput:
@@ -48,6 +51,9 @@ class GeminiReasoner:
         except Exception:
             return self._fallback(payload, mode="fallback")
 
+    def _endpoint(self) -> str:
+        return f"{self.base_url}/{self.model}:generateContent"
+
     def _remote_explain(self, payload: dict[str, Any]) -> ReasoningOutput:
         headers = {
             "x-goog-api-key": self.api_key,
@@ -55,12 +61,14 @@ class GeminiReasoner:
         }
         prompt = build_reasoning_prompt(payload)
         body = {
-            "model": self.model,
-            "input": prompt,
-            "store": False,
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.2,
+                "responseMimeType": "application/json",
+            },
         }
         response = requests.post(
-            self.base_url,
+            self._endpoint(),
             headers=headers,
             json=body,
             timeout=self.timeout_seconds,
@@ -138,14 +146,11 @@ def build_reasoning_prompt(payload: dict[str, Any]) -> str:
 
 
 def extract_output_text(response: dict[str, Any]) -> str:
-    steps = response.get("steps", [])
-    for step in reversed(steps):
-        if step.get("type") == "model_output":
-            content = step.get("content", [])
-            if not content:
-                continue
-            first = content[0]
-            text = first.get("text")
+    candidates = response.get("candidates", [])
+    for candidate in candidates:
+        parts = candidate.get("content", {}).get("parts", [])
+        for part in parts:
+            text = part.get("text")
             if text:
                 return text
     raise ValueError("Gemini response did not include output text.")
