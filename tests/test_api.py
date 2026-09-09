@@ -17,7 +17,10 @@ def _png_bytes(size=(200, 200), color=(120, 120, 120)) -> bytes:
 def test_health_endpoint() -> None:
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["detector_mode"] in {"model", "mock"}
+    assert body["severity_mode"] in {"model", "mock"}
 
 
 def test_predict_rejects_non_image() -> None:

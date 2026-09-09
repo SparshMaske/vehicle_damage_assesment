@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 
 from fastapi import FastAPI, File, HTTPException, Response, UploadFile
@@ -36,13 +37,19 @@ class PredictionResponse(BaseModel):
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
 
+logger = logging.getLogger("vehicle_damage_assessment.api")
+
 app = FastAPI(title="Vehicle Damage Assessment API", version="1.0.0")
 pipeline = default_pipeline()
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "detector_mode": "model" if pipeline.detector.model is not None else "mock",
+        "severity_mode": "model" if pipeline.classifier.model is not None else "mock",
+    }
 
 
 async def run_prediction(file: UploadFile) -> dict:
@@ -66,6 +73,7 @@ async def run_prediction(file: UploadFile) -> dict:
     try:
         return pipeline.run(image)
     except Exception as exc:  # noqa: BLE001 - surface a clean 500 instead of a stack trace
+        logger.exception("Damage assessment pipeline failed for upload %s", file.filename)
         raise HTTPException(status_code=500, detail="Damage assessment pipeline failed.") from exc
 
 

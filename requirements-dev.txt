@@ -1,0 +1,15 @@
+# Lightweight dependencies for running the API, Streamlit app, and test
+# suite without the heavy ML stack (torch/torchvision/ultralytics). The
+# detection and severity modules import those lazily and fall back to the
+# deterministic mock path when they are absent, so the full app and the
+# test suite run against this lean set alone.
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.9
+pydantic==2.9.2
+pillow==10.4.0
+numpy==2.1.1
+requests==2.32.3
+streamlit==1.39.0
+httpx==0.27.2
+pytest==8.3.3

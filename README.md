@@ -1,5 +1,7 @@
 # AI-Powered Vehicle Damage Assessment for Auto Insurance Claims
 
+[![CI](https://github.com/SparshMaske/vehicle_damage_assesment/actions/workflows/ci.yml/badge.svg)](https://github.com/SparshMaske/vehicle_damage_assesment/actions/workflows/ci.yml)
+
 This project simulates an insurance claims automation workflow that evaluates a photo of a damaged vehicle, identifies likely damage regions, assigns a severity label, and routes the claim either into straight-through processing or human adjuster review. The emphasis is on production-style pipeline design, clean separation of business logic from model code, and a demoable end-to-end flow rather than inflated model claims.
 
 ## Problem framing
@@ -48,14 +50,25 @@ vehicle-damage-assessment/
 │   ├── __init__.py
 │   ├── decision_engine.py
 │   ├── detection.py
+│   ├── llm_reasoner.py
 │   ├── pipeline.py
+│   ├── reporting.py
 │   └── severity.py
 ├── tests/
-│   └── test_decision_engine.py
+│   ├── test_api.py
+│   ├── test_cost.py
+│   ├── test_decision_engine.py
+│   ├── test_llm_reasoner.py
+│   ├── test_pipeline.py
+│   └── test_reporting.py
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── .gitignore
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
+├── requirements-dev.txt
 └── README.md
 ```
 
@@ -98,7 +111,7 @@ If `ENABLE_GEMINI_REASONER=true` and a valid `GEMINI_API_KEY` is present, the ba
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt   # or requirements-dev.txt for the lean, mock-only path
 uvicorn api.main:app --reload
 ```
 
@@ -320,11 +333,21 @@ This repository does not claim that the referenced public datasets were download
 
 ## Testing
 
+Install the lightweight test dependencies (no torch/ultralytics needed —
+the ML modules fall back to their deterministic mock path when those are
+absent) and run the suite:
+
 ```bash
-pytest tests/test_decision_engine.py
+pip install -r requirements-dev.txt
+pytest
 ```
 
-The unit tests cover business-routing logic independently from trained model availability.
+The suite covers the decision engine and cost logic, the pipeline
+(bounding-box clamping, location inference, end-to-end mock run), the
+optional Gemini reasoner and its offline fallback, the text report, and
+the API endpoints including their error paths — all independently of
+trained model availability. CI runs the same suite on Python 3.10 and
+3.11 via `.github/workflows/ci.yml`.
 
 ## Limitations & Path to Production
 
