@@ -1,3 +1,5 @@
+import os
+
 from PIL import Image
 
 from src.pipeline import (
@@ -41,3 +43,15 @@ def test_pipeline_runs_end_to_end_in_mock_mode() -> None:
         x1, y1, x2, y2 = detection["bbox"]
         assert 0 <= x1 < x2 <= image.size[0]
         assert 0 <= y1 < y2 <= image.size[1]
+
+
+def test_default_pipeline_honors_weight_path_env(monkeypatch) -> None:
+    # Non-existent paths keep the pipeline in mock mode but prove the env
+    # overrides are threaded through to the detector and classifier.
+    monkeypatch.setenv("DETECTOR_WEIGHTS", "/tmp/does-not-exist-detector.pt")
+    monkeypatch.setenv("SEVERITY_WEIGHTS", "/tmp/does-not-exist-severity.pth")
+    pipeline = default_pipeline()
+    assert pipeline.detector.model_path == "/tmp/does-not-exist-detector.pt"
+    assert pipeline.classifier.model_path == "/tmp/does-not-exist-severity.pth"
+    assert pipeline.detector.model is None
+    assert pipeline.classifier.model is None

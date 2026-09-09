@@ -1,4 +1,5 @@
 import base64
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -155,9 +156,13 @@ def infer_location(bbox: list[int], image_size: tuple[int, int]) -> str:
 
 def default_pipeline() -> DamageAssessmentPipeline:
     root = Path(__file__).resolve().parent.parent
-    detector_weights = root / "models" / "weights" / "detector.pt"
-    severity_weights = root / "models" / "weights" / "severity.pth"
+    detector_weights = os.getenv(
+        "DETECTOR_WEIGHTS", str(root / "models" / "weights" / "detector.pt")
+    )
+    severity_weights = os.getenv(
+        "SEVERITY_WEIGHTS", str(root / "models" / "weights" / "severity.pth")
+    )
     return DamageAssessmentPipeline(
-        detector_weights=str(detector_weights),
-        severity_weights=str(severity_weights),
+        detector_weights=detector_weights,
+        severity_weights=severity_weights,
     )

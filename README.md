@@ -190,6 +190,22 @@ Straight-Through Eligible: 1 region detected with overall severity Minor.
 }
 ```
 
+## Configuration
+
+The backend and demo app are configured through environment variables, all
+of which have sensible defaults so the project runs with zero configuration:
+
+| Variable | Applies to | Default | Purpose |
+| --- | --- | --- | --- |
+| `DETECTOR_WEIGHTS` | API / pipeline | `models/weights/detector.pt` | Path to YOLO detector weights; falls back to the mock detector if absent. |
+| `SEVERITY_WEIGHTS` | API / pipeline | `models/weights/severity.pth` | Path to the ResNet severity weights; falls back to the mock classifier if absent. |
+| `MAX_UPLOAD_MB` | API | `15` | Maximum accepted upload size, in megabytes. |
+| `API_URL` | Streamlit app | `http://127.0.0.1:8000/predict/structured` | Assessment API endpoint the demo calls. |
+| `ENABLE_GEMINI_REASONER` | Reasoning layer | `false` | Enables the optional Gemini reasoning layer. |
+| `GEMINI_API_KEY` | Reasoning layer | _(unset)_ | API key for the Gemini reasoning layer. |
+| `GEMINI_MODEL` | Reasoning layer | `gemini-2.5-flash` | Gemini model id. |
+| `GEMINI_BASE_URL` | Reasoning layer | Google Generative Language API | Override for the Gemini endpoint. |
+
 ## Gemini integration
 
 The backend supports Gemini as an optional reasoning layer. By default, the code uses environment-driven configuration:

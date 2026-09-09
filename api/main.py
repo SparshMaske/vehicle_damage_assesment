@@ -1,4 +1,5 @@
 import logging
+import os
 from io import BytesIO
 
 from fastapi import FastAPI, File, HTTPException, Response, UploadFile
@@ -35,7 +36,8 @@ class PredictionResponse(BaseModel):
     annotated_image_base64: str
 
 
-MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "15"))
+MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 logger = logging.getLogger("vehicle_damage_assessment.api")
 
